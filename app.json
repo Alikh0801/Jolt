@@ -25,6 +25,9 @@
     },
     "splash": {
       "backgroundColor": "#0E1116"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
