@@ -40,7 +40,7 @@ export function HomeScreen({ navigation }: Props) {
 
       <View style={styles.sheet}>
         <View style={styles.sheetHandle} />
-        <Text style={styles.sheetTitle}>Nə baş verib?</Text>
+        <Text style={styles.sheetTitle}>Nə probleminiz var?</Text>
         <Text style={styles.sheetSubtitle}>Problemi seç, ən yaxın usta 60 saniyə ərzində tapılsın</Text>
 
         <ScrollView
