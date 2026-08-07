@@ -1,0 +1,184 @@
+import React from 'react';
+import { View, Text, StyleSheet, Switch, FlatList, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { colors } from '../../theme/colors';
+import { fonts, type } from '../../theme/typography';
+import { Card } from '../../components/Card';
+import { MapMock } from '../../components/MapMock';
+import { MapPin } from '../../components/MapPin';
+import { providerFeed, serviceCategories } from '../../data/mock';
+import { ProviderStackParamList, ProviderTabParamList } from '../../navigation/types';
+import { useApp } from '../../context/AppContext';
+
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<ProviderTabParamList, 'Dashboard'>,
+  NativeStackScreenProps<ProviderStackParamList>
+>;
+
+const feedPinPositions = [
+  { top: '22%', left: '30%' },
+  { top: '55%', left: '70%' },
+  { top: '68%', left: '28%' },
+] as const;
+
+export function DashboardScreen({ navigation }: Props) {
+  const { isOnline, setIsOnline } = useApp();
+
+  return (
+    <View style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.topWrap}>
+        <View style={styles.topBar}>
+          <View>
+            <Text style={styles.greeting}>Salam, Rəşad</Text>
+            <Text style={styles.status}>
+              {isOnline ? 'Aktivsən · sifarişlər görünür' : 'Passivsən · sifariş gəlmir'}
+            </Text>
+          </View>
+          <View style={styles.onlineToggle}>
+            <View style={[styles.dot, { backgroundColor: isOnline ? colors.success : colors.textFaint }]} />
+            <Switch
+              value={isOnline}
+              onValueChange={setIsOnline}
+              trackColor={{ true: colors.amberDim, false: colors.line }}
+              thumbColor={isOnline ? colors.amber : colors.textFaint}
+            />
+          </View>
+        </View>
+
+        <MapMock style={styles.map} dimmed={!isOnline}>
+          <View style={[styles.pin, { top: '45%', left: '50%', marginLeft: -20, marginTop: -20 }]}>
+            <MapPin variant="usta" size={40} />
+          </View>
+          {isOnline &&
+            providerFeed.map((r, i) => (
+              <View
+                key={r.id}
+                style={[
+                  styles.pin,
+                  { top: feedPinPositions[i].top, left: feedPinPositions[i].left, marginLeft: -16, marginTop: -16 },
+                ]}
+              >
+                <MapPin variant="destination" size={32} />
+              </View>
+            ))}
+        </MapMock>
+      </SafeAreaView>
+
+      <View style={styles.sheet}>
+        <View style={styles.sheetHandle} />
+        <View style={styles.sheetHeaderRow}>
+          <Text style={styles.sheetTitle}>Yaxınlıqdakı sorğular</Text>
+          <Text style={styles.sheetCount}>{isOnline ? providerFeed.length : 0}</Text>
+        </View>
+
+        {isOnline ? (
+          <FlatList
+            data={providerFeed}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
+            renderItem={({ item }) => {
+              const category = serviceCategories.find((c) => c.id === item.category)!;
+              return (
+                <Pressable
+                  onPress={() => navigation.navigate('IncomingRequest', { requestId: item.id })}
+                >
+                  <Card style={styles.reqCard}>
+                    <View style={styles.reqTop}>
+                      <View style={styles.reqIcon}>
+                        <Feather name={category.icon as any} size={17} color={colors.amber} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.reqTitle}>{category.title} · {item.customerName}</Text>
+                        <Text style={styles.reqAddress} numberOfLines={1}>
+                          {item.address}
+                        </Text>
+                      </View>
+                      <Text style={styles.reqOffer}>{item.offer}</Text>
+                    </View>
+                    <View style={styles.reqBottom}>
+                      <Feather name="navigation" size={12} color={colors.textDim} />
+                      <Text style={styles.reqMeta}>{item.distanceKm} km</Text>
+                      <Text style={styles.reqDot}>·</Text>
+                      <Text style={styles.reqMeta}>{item.postedMinutesAgo} dəq əvvəl</Text>
+                    </View>
+                  </Card>
+                </Pressable>
+              );
+            }}
+          />
+        ) : (
+          <View style={styles.offlineBox}>
+            <Feather name="moon" size={22} color={colors.textFaint} />
+            <Text style={styles.offlineText}>Sifariş almaq üçün aktiv rejimə keç</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  topWrap: { height: '52%' },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  greeting: { fontFamily: fonts.headingMedium, fontSize: 18, color: colors.cream },
+  status: { fontFamily: fonts.body, fontSize: 12, color: colors.textDim, marginTop: 2 },
+  onlineToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  map: { flex: 1 },
+  pin: { position: 'absolute' },
+  sheet: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -24,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderColor: colors.line,
+  },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, alignSelf: 'center', marginBottom: 14 },
+  sheetHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  sheetTitle: { ...type.h3 },
+  sheetCount: {
+    fontFamily: fonts.monoSemi,
+    fontSize: 12,
+    color: colors.bg,
+    backgroundColor: colors.amber,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    overflow: 'hidden',
+  },
+  reqCard: { gap: 0 },
+  reqTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  reqIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.amberSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reqTitle: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.cream },
+  reqAddress: { fontFamily: fonts.body, fontSize: 12, color: colors.textDim, marginTop: 2 },
+  reqOffer: { fontFamily: fonts.monoSemi, fontSize: 13.5, color: colors.amber },
+  reqBottom: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
+  reqMeta: { fontFamily: fonts.bodyMedium, fontSize: 11.5, color: colors.textDim },
+  reqDot: { color: colors.textFaint, fontSize: 11 },
+  offlineBox: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 40 },
+  offlineText: { fontFamily: fonts.bodyMedium, fontSize: 13, color: colors.textFaint, textAlign: 'center' },
+});
